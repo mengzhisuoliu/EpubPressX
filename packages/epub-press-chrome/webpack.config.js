@@ -38,14 +38,14 @@ if (process.env.ENV !== 'test') {
         ],
         resolve: {
             extensions: ['.js'],
+            fallback: {
+              fs: false
+            }
         },
         devServer: {
             hostname: 'localhost',
             port: '5000',
             inline: true,
-        },
-        node: {
-            fs: 'empty',
         },
     };
 } else {
@@ -66,13 +66,13 @@ if (process.env.ENV !== 'test') {
         ],
         resolve: {
             extensions: ['.js'],
+            fallback: {
+              fs: false
+            }
         },
         devServer: {
             port: '5001',
             inline: true,
-        },
-        node: {
-            fs: 'empty',
         },
     };
 }

@@ -1,5 +1,7 @@
 import EpubPress from 'epub-press-js';
 import Browser from './browser';
+import UI from './ui';
+import { generateEpub } from './generater';
 
 const manifest = Browser.getManifest();
 const DOWNLOAD_TIMEOUT = 300000; // 30 second timeout for downloads
@@ -15,8 +17,17 @@ function timeoutDownload() {
     });
 }
 
-Browser.onForegroundMessage((request) => {
+Browser.onForegroundMessage(async (request) => {
     if (request.action === 'download') {
+        const book = request.book
+        generateEpub(book).then((blob) => {
+            chrome.downloads.download({
+                url: URL.createObjectURL(blob),
+                filename: book.title + '.epub',
+            });
+        });
+        return false
+
         Browser.setLocalStorage({ downloadState: true, publishStatus: '{}' });
         const timeout = setTimeout(timeoutDownload, DOWNLOAD_TIMEOUT);
 

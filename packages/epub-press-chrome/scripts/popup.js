@@ -43,7 +43,7 @@ $('#download').click(() => {
                 action: 'download',
                 book: {
                     title: $('#book-title').val() || $('#book-title').attr('placeholder'),
-                    description: $('#book-description').val() || undefined,
+                    coverPath: $('#book-cover').val() || undefined,
                     sections,
                 },
             });
