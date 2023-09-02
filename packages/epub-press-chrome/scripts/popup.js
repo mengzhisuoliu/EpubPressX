@@ -3,6 +3,7 @@ import $ from 'jquery';
 
 import Browser from './browser';
 import UI from './ui';
+import { generateEpub } from './generater';
 
 const manifest = Browser.getManifest();
 
@@ -39,13 +40,17 @@ $('#download').click(() => {
     } else {
         Browser.getTabsHtml(selectedItems).then((sections) => {
             UI.showSection('#downloadSpinner');
-            Browser.sendMessage({
-                action: 'download',
-                book: {
-                    title: $('#book-title').val() || $('#book-title').attr('placeholder'),
-                    coverPath: $('#book-cover').val() || undefined,
-                    sections,
-                },
+            const book = {
+                title: $('#book-title').val() || $('#book-title').attr('placeholder'),
+                coverPath: $('#book-cover').val() || undefined,
+                sections,
+            };
+            generateEpub(book).then((blob) => {
+                chrome.downloads.download({
+                    url: URL.createObjectURL(blob),
+                    filename: `${book.title}.epub`,
+                });
+                UI.showSection('#downloadSuccess');
             });
         }).catch((error) => {
             UI.setErrorMessage(`Could not find tab content: ${error}`);

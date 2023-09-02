@@ -1,6 +1,6 @@
 {
     "appName": {
-        "message": "EpubPressX - Read the web offline",
+        "message": "EpubPressX - 将网页制作成 epub 电子书",
         "description": "Publish custom eBooks with your favorite web content!"
     },
     "appShortName": {
@@ -8,7 +8,7 @@
         "description": "Name of app."
     },
     "appDescription": {
-        "message": "Create custom ebooks from your favorite blogs and websites. (Upgrade from EpubPress, Generate EPUB files locally instead of relying on the server)",
+        "message": "将网页制作成 epub 电子书，支持微信读书等",
         "description": "Publish custom eBooks with your favorite web content!"
     }
 }

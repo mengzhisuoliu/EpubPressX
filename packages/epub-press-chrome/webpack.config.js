@@ -15,7 +15,7 @@ if (process.env.ENV !== 'test') {
         mode: 'production',
         entry: {
             popup: ['./scripts/popup.js'],
-            background: ['./scripts/background.js'],
+            service: ['./scripts/service.js'],
         },
         output: {
             filename: '[name].js',

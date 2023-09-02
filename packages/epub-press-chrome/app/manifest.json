@@ -2,9 +2,9 @@
     "name": "__MSG_appName__",
     "short_name": "__MSG_appShortName__",
     "version": "1.0.0",
-    "author": "Harold Treen",
-    "homepage_url": "https://epub.press/",
-    "manifest_version": 2,
+    "author": "sunxen",
+    "homepage_url": "https://github.com/sunxen/EpubPressX",
+    "manifest_version": 3,
     "description": "__MSG_appDescription__",
     "icons": {
         "16": "images/download-icon-16.png",
@@ -12,18 +12,20 @@
     },
     "default_locale": "en",
     "background": {
-        "scripts": [
-            "build/background.js"
-        ]
+        "service_worker": "build/service.js",
+        "type": "module"
     },
     "permissions": [
         "tabs",
+        "scripting",
         "downloads",
-        "storage",
+        "storage"
+    ],
+    "host_permissions": [
         "http://*/",
         "https://*/"
     ],
-    "browser_action": {
+    "action": {
         "default_icon": {
             "20": "images/download-icon-20.png",
             "32": "images/download-icon-32.png"

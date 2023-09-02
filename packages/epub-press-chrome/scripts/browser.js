@@ -53,17 +53,16 @@ class Browser {
     }
 
     static getTabsHtml(tabs) {
-        const code = 'document.documentElement.outerHTML';
         const htmlPromises = tabs.map(
             tab => new Promise((resolve) => {
-                chrome.tabs.executeScript(tab.id, { code }, (html) => {
-                    const updatedTab = tab;
-                    if (html && html[0] && html[0].match(/html/i)) {
-                        updatedTab.html = html[0];
-                    } else {
-                        updatedTab.html = null;
-                    }
-                    resolve(updatedTab);
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: () => document.documentElement.outerHTML,
+                }).then((list) => {
+                    resolve({
+                        ...tab,
+                        html: list[0].result,
+                    });
                 });
             }),
         );
