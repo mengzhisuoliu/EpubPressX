@@ -18,8 +18,7 @@
     "permissions": [
         "tabs",
         "scripting",
-        "downloads",
-        "storage"
+        "downloads"
     ],
     "host_permissions": [
         "http://*/",

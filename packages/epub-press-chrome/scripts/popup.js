@@ -1,11 +1,8 @@
-import EpubPress from 'epub-press-js';
 import $ from 'jquery';
 
 import Browser from './browser';
 import UI from './ui';
 import { generateEpub } from './generater';
-
-const manifest = Browser.getManifest();
 
 /*
 i18n
@@ -76,39 +73,6 @@ $('#download').click(() => {
     }
 });
 
-
-/*
-Settings Management
-*/
-
-function setExistingSettings(cb) {
-    Browser.getLocalStorage(['email', 'filetype']).then((state) => {
-        $('#settings-email-text').val(state.email);
-        $('#settings-filetype-select').val(state.filetype);
-        cb();
-    }).catch((error) => {
-        UI.setErrorMessage(`Could not load settings: ${error}`);
-    });
-}
-
-$('#settings-btn').click(() => {
-    setExistingSettings(() => {
-        UI.showSection('#settingsForm');
-    });
-});
-
-$('#settings-save-btn').click(() => {
-    Browser.setLocalStorage({
-        email: $('#settings-email-text').val(),
-        filetype: $('#settings-filetype-select').val(),
-    });
-    UI.showSection('#downloadForm');
-});
-
-$('#settings-cancel-btn').click(() => {
-    UI.showSection('#downloadForm');
-});
-
 /*
 Messaging
 */
@@ -136,22 +100,6 @@ Startup
 
 window.onload = () => {
     UI.initializeUi();
-    Browser.getLocalStorage('downloadState').then((state) => {
-        if (state.downloadState) {
-            Browser.getLocalStorage('publishStatus').then((publishState) => {
-                const status = JSON.parse(publishState.publishStatus);
-                UI.updateStatus(status.progress, status.message);
-                UI.showSection('#downloadSpinner');
-            });
-        } else {
-            EpubPress.checkForUpdates('epub-press-chrome', manifest.version).then((message) => {
-                if (message) {
-                    UI.setAlertMessage(message);
-                }
-            });
-            UI.showSection('#downloadForm');
-            UI.initializeTabList();
-        }
-        return null;
-    });
+    UI.showSection('#downloadForm');
+    UI.initializeTabList();
 };

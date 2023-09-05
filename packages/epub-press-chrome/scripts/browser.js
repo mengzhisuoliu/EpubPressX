@@ -70,22 +70,6 @@ class Browser {
         return Promise.all(htmlPromises);
     }
 
-    static getLocalStorage(fields) {
-        let promise;
-        if (chrome) {
-            promise = new Promise((resolve) => {
-                chrome.storage.local.get(fields, (state) => {
-                    resolve(state);
-                });
-            });
-        }
-        return promise;
-    }
-
-    static setLocalStorage(keyValues) {
-        chrome.storage.local.set(keyValues);
-    }
-
     static sendMessage(...args) {
         chrome.runtime.sendMessage(...args);
     }
