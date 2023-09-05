@@ -5,6 +5,20 @@ const san = getSanitizeHtmlOptions()
 san.allowedAttributes.img = ['src', 'alt', 'title']
 setSanitizeHtmlOptions(san)
 
+function allowImgTag(allow) {
+    const index = san.allowedTags.indexOf('img')
+    if (allow) {
+        if (index < 0) {
+            san.allowedTags.push('img')
+        }
+    } else {
+        if (index > -1) {
+            san.allowedTags.splice(index, 1)
+        }
+    }
+    setSanitizeHtmlOptions(san)
+}
+
 const template = {
     ['META-INF/container.xml']: function () {
         return `<?xml version="1.0" encoding="UTF-8" ?>
@@ -149,6 +163,8 @@ function downloadAllImages() {
  */
 export async function generateEpub(book) {
     imagesList.length = 0;
+    allowImgTag(book.includeImages)
+    
     book.id = `book-${Date.now()}`
 
     book.pages = []

@@ -8,6 +8,23 @@ import { generateEpub } from './generater';
 const manifest = Browser.getManifest();
 
 /*
+i18n
+*/
+$('#text-title').text(chrome.i18n.getMessage('textTitle'));
+// text-cover
+$('#text-cover').text(chrome.i18n.getMessage('textCover'));
+// text-include-images
+$('#text-include-images').text(chrome.i18n.getMessage('textIncludeImages'));
+// text-select-pages
+$('#text-select-pages').text(chrome.i18n.getMessage('textSelectPages'));
+// text-select-all
+$('#select-all').text(chrome.i18n.getMessage('textSelectAll'));
+// text-select-none
+$('#select-none').text(chrome.i18n.getMessage('textSelectNone'));
+// text-download
+$('#download').text(chrome.i18n.getMessage('textDownload'));
+
+/*
 Download Form
 */
 
@@ -36,13 +53,14 @@ $('#download').click(() => {
 
 
     if (selectedItems.length <= 0) {
-        $('#alert-message').text('No articles selected!');
+        $('#alert-message').text(chrome.i18n.getMessage('textNoItems'));
     } else {
         Browser.getTabsHtml(selectedItems).then((sections) => {
             UI.showSection('#downloadSpinner');
             const book = {
                 title: $('#book-title').val() || $('#book-title').attr('placeholder'),
                 coverPath: $('#book-cover').val() || undefined,
+                includeImages: $('#include-images').prop('checked'),
                 sections,
             };
             generateEpub(book).then((blob) => {

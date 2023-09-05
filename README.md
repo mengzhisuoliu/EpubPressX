@@ -7,6 +7,7 @@
 Fork from https://github.com/haroldtreen/epub-press-clients
 
 and make some updates:
-- Generate EPUB files locally instead of relying on the server. 
+- Faster and more stable: Generate EPUB files locally instead of relying on the server. 
 - Fixed some EPUB format issues.
 - Fixed some image position issues.
+- Includes images or not.

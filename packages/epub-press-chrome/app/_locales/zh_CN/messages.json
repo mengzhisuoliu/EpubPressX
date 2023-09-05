@@ -10,5 +10,37 @@
     "appDescription": {
         "message": "将网页制作成 epub 电子书，支持微信读书等",
         "description": "Publish custom eBooks with your favorite web content!"
+    },
+    "textTitle": {
+        "message": "标题：",
+        "description": "Title of the book."
+    },
+    "textCover": {
+        "message": "封面：",
+        "description": "Cover of the book."
+    },
+    "textIncludeImages": {
+        "message": "包含图片",
+        "description": "Include images in the book."
+    },
+    "textSelectPages": {
+        "message": "选择页面生成图书：",
+        "description": "Select pages to include in the book."
+    },
+    "textSelectAll": {
+        "message": "全选",
+        "description": "Select all items."
+    },
+    "textSelectNone": {
+        "message": "全不选",
+        "description": "Select no items."
+    },
+    "textDownload": {
+        "message": "下载",
+        "description": "Download the book."
+    },
+    "textNoItems": {
+        "message": "没有选中的页面！",
+        "description": "No items selected."
     }
 }
