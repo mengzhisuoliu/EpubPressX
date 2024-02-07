@@ -31049,15 +31049,34 @@ jquery_default()('#download').text(chrome.i18n.getMessage('textDownload'));
 Download Form
 */
 
+// auto generate title
+// when select the first page, make the page title as the book title
+// when unselect all pages, clear the book title
+function updateBookTitle() {
+  const firstChecked = jquery_default()('input.article-checkbox:checked')[0];
+  if (firstChecked) {
+    if (!jquery_default()('#book-title').val()) {
+      const title = firstChecked.nextElementSibling.textContent;
+      jquery_default()('#book-title').val(title.substring(0, 50));
+    }
+  } else {
+    jquery_default()('#book-title').val('');
+  }
+}
+jquery_default()('#tab-list').on('click', '.checkbox', () => {
+  updateBookTitle();
+});
 jquery_default()('#select-all').click(() => {
   jquery_default()('input.article-checkbox').each((index, checkbox) => {
     jquery_default()(checkbox).prop('checked', true);
   });
+  updateBookTitle();
 });
 jquery_default()('#select-none').click(() => {
   jquery_default()('input.article-checkbox').each((index, checkbox) => {
     jquery_default()(checkbox).prop('checked', false);
   });
+  updateBookTitle();
 });
 jquery_default()('#download').click(() => {
   const selectedItems = [];
