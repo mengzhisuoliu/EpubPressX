@@ -236,3 +236,32 @@ div#settings-btn {
     height: 30px;
     width: 30px;
 }
+
+/*
+Auto Generated Title
+*/
+
+#text-title-container {
+    display: flex;
+}
+
+#gen-icon, #loading-icon {
+    display: none;
+    width: 1.2em;
+    margin-left: 15px;
+    fill: currentColor;
+}
+
+#gen-icon {
+    cursor: pointer;
+}
+.selected #gen-icon {
+    display: inline-block;
+}
+.loading #gen-icon {
+    display: none;
+}
+
+.loading #loading-icon {
+    display: inline-block;
+}

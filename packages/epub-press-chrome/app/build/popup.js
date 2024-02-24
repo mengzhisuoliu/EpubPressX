@@ -31032,6 +31032,7 @@ async function generateEpub(book) {
 i18n
 */
 jquery_default()('#text-title').text(chrome.i18n.getMessage('textTitle'));
+jquery_default()('#auto-gen-title title').text(chrome.i18n.getMessage('textAutoGenTitle'));
 // text-cover
 jquery_default()('#text-cover').text(chrome.i18n.getMessage('textCover'));
 // text-include-images
@@ -31049,34 +31050,49 @@ jquery_default()('#download').text(chrome.i18n.getMessage('textDownload'));
 Download Form
 */
 
-// auto generate title
-// when select the first page, make the page title as the book title
-// when unselect all pages, clear the book title
-function updateBookTitle() {
+// auto generate title, base on first checked item
+async function autoGenTitle() {
   const firstChecked = jquery_default()('input.article-checkbox:checked')[0];
   if (firstChecked) {
-    if (!jquery_default()('#book-title').val()) {
+    jquery_default()('#text-title-container').addClass('loading');
+    try {
       const title = firstChecked.nextElementSibling.textContent;
-      jquery_default()('#book-title').val(title.substring(0, 50));
+      // request server
+      const response = await fetch(`http://codefinder.xyz/api/getEbookTitle?text=${encodeURIComponent(title)}`);
+      const data = await response.json();
+      jquery_default()('#book-title').val(data.data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      jquery_default()('#text-title-container').removeClass('loading');
     }
-  } else {
-    jquery_default()('#book-title').val('');
   }
 }
-jquery_default()('#tab-list').on('click', '.checkbox', () => {
-  updateBookTitle();
+jquery_default()('#gen-icon').on('click', () => {
+  autoGenTitle();
+});
+function updateSelectedCount() {
+  const selectedCount = jquery_default()('input.article-checkbox:checked').length;
+  if (selectedCount > 0) {
+    jquery_default()('#text-title-container').addClass('selected');
+  } else {
+    jquery_default()('#text-title-container').removeClass('selected');
+  }
+}
+jquery_default()('#tab-list').on('change', 'input.article-checkbox', () => {
+  updateSelectedCount();
 });
 jquery_default()('#select-all').click(() => {
   jquery_default()('input.article-checkbox').each((index, checkbox) => {
     jquery_default()(checkbox).prop('checked', true);
   });
-  updateBookTitle();
+  updateSelectedCount();
 });
 jquery_default()('#select-none').click(() => {
   jquery_default()('input.article-checkbox').each((index, checkbox) => {
     jquery_default()(checkbox).prop('checked', false);
   });
-  updateBookTitle();
+  updateSelectedCount();
 });
 jquery_default()('#download').click(() => {
   const selectedItems = [];

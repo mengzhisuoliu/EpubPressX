@@ -8,6 +8,7 @@ import { generateEpub } from './generater';
 i18n
 */
 $('#text-title').text(chrome.i18n.getMessage('textTitle'));
+$('#auto-gen-title title').text(chrome.i18n.getMessage('textAutoGenTitle'));
 // text-cover
 $('#text-cover').text(chrome.i18n.getMessage('textCover'));
 // text-include-images
@@ -25,37 +26,54 @@ $('#download').text(chrome.i18n.getMessage('textDownload'));
 Download Form
 */
 
-// auto generate title
-// when select the first page, make the page title as the book title
-// when unselect all pages, clear the book title
-function updateBookTitle() {
+// auto generate title, base on first checked item
+async function autoGenTitle() {
     const firstChecked = $('input.article-checkbox:checked')[0];
     if (firstChecked) {
-        if (!$('#book-title').val()) {
+        $('#text-title-container').addClass('loading');
+        try {
             const title = firstChecked.nextElementSibling.textContent;
-            $('#book-title').val(title.substring(0, 50));
+            // request server
+            const response = await fetch(`http://codefinder.xyz/api/getEbookTitle?text=${encodeURIComponent(title)}`);
+            const data = await response.json();
+            $('#book-title').val(data.data);
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            $('#text-title-container').removeClass('loading');
         }
-    } else {
-        $('#book-title').val('');
     }
 }
 
-$('#tab-list').on('click', '.checkbox', () => {
-    updateBookTitle();
+$('#gen-icon').on('click', () => {
+    autoGenTitle();
+});
+
+function updateSelectedCount() {
+    const selectedCount = $('input.article-checkbox:checked').length;
+    if (selectedCount > 0) {
+        $('#text-title-container').addClass('selected');
+    } else {
+        $('#text-title-container').removeClass('selected');
+    }
+}
+
+$('#tab-list').on('change', 'input.article-checkbox', () => {
+    updateSelectedCount();
 });
 
 $('#select-all').click(() => {
     $('input.article-checkbox').each((index, checkbox) => {
         $(checkbox).prop('checked', true);
     });
-    updateBookTitle();
+    updateSelectedCount();
 });
 
 $('#select-none').click(() => {
     $('input.article-checkbox').each((index, checkbox) => {
         $(checkbox).prop('checked', false);
     });
-    updateBookTitle();
+    updateSelectedCount();
 });
 
 $('#download').click(() => {

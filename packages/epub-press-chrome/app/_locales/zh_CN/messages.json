@@ -15,6 +15,9 @@
         "message": "标题：",
         "description": "Title of the book."
     },
+    "textAutoGenTitle": {
+        "message": "自动生成标题（根据首个选中页面）"
+    },
     "textCover": {
         "message": "封面：",
         "description": "Cover of the book."
