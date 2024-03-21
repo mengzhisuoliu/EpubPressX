@@ -19,6 +19,15 @@ function allowImgTag(allow) {
     setSanitizeHtmlOptions(san)
 }
 
+function htmlEncode(input = '') {
+    return input
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+}
+
 const template = {
     ['META-INF/container.xml']: function () {
         return `<?xml version="1.0" encoding="UTF-8" ?>
@@ -112,7 +121,7 @@ ${book.pages.map((page, index) => `        <navPoint id="chapter${index + 1}" pl
     <body>
         <h2>References</h2>
         <ol>
-${book.pages.map((page) => `            <li><a href="${page.url}">${page.title} (${page.url})</a></li>`).join('\n')}
+${book.pages.map((page) => `            <li><a href="${htmlEncode(page.url)}">${htmlEncode(page.title)} (${htmlEncode(page.url)})</a></li>`).join('\n')}
         </ol>
     </body>
 </html>`
@@ -123,13 +132,13 @@ ${book.pages.map((page) => `            <li><a href="${page.url}">${page.title} 
 const imagesList = [];
 
 //  将 html 中的 img 的 url 转换成本地 url
-async function replaceImages(html) {
+async function replaceImages(html, chapterName) {
     const dom = new DOMParser().parseFromString(html, 'text/xml');
     const images = dom.querySelectorAll('img');
     images.forEach((image, index) => {    
         const src = image.src;
         if (src) {
-            const id = index + '_' + src.split('/').pop();
+            const id = chapterName + '_' +  index + '_' + src.split('/').pop().split('?')[0];
             const path = 'image/' + id
             image.src = path;
             imagesList.push({ src, id, path });
@@ -181,8 +190,9 @@ export async function generateEpub(book) {
     zip.file('OEBPS/toc.ncx', template['OEBPS/toc.ncx'](book));
     book.pages.forEach(async (page, index) => {
         let xml = template.chapter(page.title, page.content)
-        xml = await replaceImages(xml);
-        zip.file(`OEBPS/chapter${index + 1}.xhtml`, xml);
+        const chapterName = `chapter${index + 1}`
+        xml = await replaceImages(xml, chapterName);
+        zip.file(`OEBPS/${chapterName}.xhtml`, xml);
     })
     zip.file('OEBPS/references.xhtml', template.references(book));
 
@@ -192,7 +202,7 @@ export async function generateEpub(book) {
         imagesList.push({
             src: coverPath,
             id: 'cover',
-            path: 'image/cover' + coverPath.split('/').pop(),
+            path: 'image/cover' + coverPath.split('/').pop().split('?')[0],
         });
     }
     

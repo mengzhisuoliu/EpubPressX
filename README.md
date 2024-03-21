@@ -35,10 +35,6 @@ OEBPS/
 ```sh
 cd "folder of epub content"
 
-# add mimetype 1st
-zip -0 -X ../file.epub mimetype
-
-# add the rest
 zip -9 -X -r -u ../file.epub *
 ```
 

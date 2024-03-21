@@ -34,9 +34,9 @@ async function autoGenTitle() {
         try {
             const title = firstChecked.nextElementSibling.textContent;
             // request server
-            const response = await fetch(`http://codefinder.xyz/api/getEbookTitle?text=${encodeURIComponent(title)}`);
-            const data = await response.json();
-            $('#book-title').val(data.data);
+            const response = await fetch(`https://book-title.sunxen.workers.dev?text=${encodeURIComponent(title)}`);
+            const text = await response.text();
+            $('#book-title').val(text);
         } catch (error) {
             console.error('Error:', error);
         } finally {
