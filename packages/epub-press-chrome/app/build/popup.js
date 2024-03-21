@@ -30819,24 +30819,16 @@ var jszip_min_default = /*#__PURE__*/__webpack_require__.n(jszip_min);
 ;// CONCATENATED MODULE: ./scripts/generater.js
 
 
-const san = getSanitizeHtmlOptions();
-san.allowedAttributes.img = ['src', 'alt', 'title'];
-setSanitizeHtmlOptions(san);
-function allowImgTag(allow) {
-  const index = san.allowedTags.indexOf('img');
-  if (allow) {
-    if (index < 0) {
-      san.allowedTags.push('img');
-    }
-  } else {
-    if (index > -1) {
-      san.allowedTags.splice(index, 1);
-    }
+function initSanitize(includeImages) {
+  const san = getSanitizeHtmlOptions();
+  san.allowedAttributes.img = ['src', 'alt', 'title'];
+  if (!includeImages) {
+    // remove img tag
+    san.allowedTags.splice(san.allowedTags.indexOf('img'), 1);
+    // remove picture tag
+    san.allowedTags.splice(san.allowedTags.indexOf('picture'), 1);
   }
   setSanitizeHtmlOptions(san);
-}
-function htmlEncode(input = '') {
-  return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 const template = {
   ['META-INF/container.xml']: function () {
@@ -30933,32 +30925,35 @@ ${book.pages.map(page => `            <li><a href="${htmlEncode(page.url)}">${ht
 </html>`;
   }
 };
+function htmlEncode(input = '') {
+  return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
-// [{ url, id, path, type, blob }]
-const imagesList = [];
-
-//  将 html 中的 img 的 url 转换成本地 url
-async function replaceImages(html, chapterName) {
+// replace images in html with local path
+function replaceImages(html, images) {
+  const srcPathMap = {};
+  for (const image of images) {
+    srcPathMap[image.src] = image.path;
+  }
   const dom = new DOMParser().parseFromString(html, 'text/xml');
-  const images = dom.querySelectorAll('img');
-  images.forEach((image, index) => {
+  const pageImages = dom.querySelectorAll('img');
+  pageImages.forEach(image => {
     const src = image.src;
-    if (src) {
-      const id = chapterName + '_' + index + '_' + src.split('/').pop().split('?')[0];
-      const path = 'image/' + id;
-      image.src = path;
-      imagesList.push({
-        src,
-        id,
-        path
-      });
+    if (srcPathMap[src]) {
+      image.src = srcPathMap[src];
     }
+  });
+
+  // remove <source> tag, because it's not supported in epub
+  const sources = dom.querySelectorAll('source');
+  sources.forEach(source => {
+    source.remove();
   });
   return new XMLSerializer().serializeToString(dom);
 }
-function downloadAllImages() {
+function downloadImages(images) {
   const promises = [];
-  for (const image of imagesList) {
+  for (const image of images) {
     promises.push(new Promise((resolve, reject) => {
       fetch(image.src).then(res => {
         image.type = res.headers.get('Content-Type');
@@ -30973,16 +30968,9 @@ function downloadAllImages() {
   }
   return Promise.all(promises);
 }
-
-/**
- * 生成 epub 格式的电子书
- * @param {*} pages [{title: '', content: ''}]
- * @returns 
- */
 async function generateEpub(book) {
-  var _book$coverPath, _imagesList$;
-  imagesList.length = 0;
-  allowImgTag(book.includeImages);
+  var _book$coverPath, _images$;
+  initSanitize(book.includeImages);
   book.id = `book-${Date.now()}`;
   book.pages = [];
   for (const section of book.sections) {
@@ -30991,36 +30979,58 @@ async function generateEpub(book) {
       book.pages.push(page);
     }
   }
+
+  // [{ id, src, type, blob, path }]
+  const images = [];
+  if (book.includeImages) {
+    // get all image urls
+    let id = 1;
+    book.pages.forEach(page => {
+      const dom = new DOMParser().parseFromString(page.content, 'text/xml');
+      const pageImages = dom.querySelectorAll('img');
+      pageImages.forEach(img => {
+        const src = img.attributes.src.value;
+        if (src) {
+          images.push({
+            id,
+            src
+          });
+          id++;
+        }
+      });
+    });
+  }
+  // add cover image
+  const coverPath = ((_book$coverPath = book.coverPath) === null || _book$coverPath === void 0 ? void 0 : _book$coverPath.trim()) || ((_images$ = images[0]) === null || _images$ === void 0 ? void 0 : _images$.src);
+  if (coverPath) {
+    images.push({
+      id: 'cover',
+      src: coverPath
+    });
+  }
+  try {
+    await downloadImages(images);
+  } catch (error) {
+    console.error(error);
+  }
+  // set images path
+  images.forEach(image => {
+    image.path = 'image/' + image.id + '.' + image.type.split('/')[1];
+  });
   const zip = new (jszip_min_default())();
   zip.file('mimetype', 'application/epub+zip');
   zip.file('META-INF/container.xml', template['META-INF/container.xml']());
   zip.file('OEBPS/toc.ncx', template['OEBPS/toc.ncx'](book));
-  book.pages.forEach(async (page, index) => {
+  book.pages.forEach((page, index) => {
     let xml = template.chapter(page.title, page.content);
-    const chapterName = `chapter${index + 1}`;
-    xml = await replaceImages(xml, chapterName);
-    zip.file(`OEBPS/${chapterName}.xhtml`, xml);
+    xml = replaceImages(xml, images);
+    zip.file(`OEBPS/chapter${index + 1}.xhtml`, xml);
   });
   zip.file('OEBPS/references.xhtml', template.references(book));
-
-  // 封面图片
-  const coverPath = ((_book$coverPath = book.coverPath) === null || _book$coverPath === void 0 ? void 0 : _book$coverPath.trim()) || ((_imagesList$ = imagesList[0]) === null || _imagesList$ === void 0 ? void 0 : _imagesList$.src);
-  if (coverPath) {
-    imagesList.push({
-      src: coverPath,
-      id: 'cover',
-      path: 'image/cover' + coverPath.split('/').pop().split('?')[0]
-    });
-  }
-  try {
-    await downloadAllImages();
-  } catch (error) {
-    console.error(error);
-  }
-  for (const image of imagesList) {
+  for (const image of images) {
     zip.file('OEBPS/' + image.path, image.blob);
   }
-  zip.file('OEBPS/content.opf', template['OEBPS/content.opf'](book, imagesList));
+  zip.file('OEBPS/content.opf', template['OEBPS/content.opf'](book, images));
   return zip.generateAsync({
     type: 'blob',
     mimeType: 'application/epub+zip'
