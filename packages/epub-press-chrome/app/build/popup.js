@@ -31045,6 +31045,7 @@ async function generateEpub(book) {
 /*
 i18n
 */
+jquery_default()('#text-mobile').text(chrome.i18n.getMessage('textMobile'));
 jquery_default()('#text-title').text(chrome.i18n.getMessage('textTitle'));
 jquery_default()('#auto-gen-title title').text(chrome.i18n.getMessage('textAutoGenTitle'));
 // text-cover

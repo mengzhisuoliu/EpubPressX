@@ -11,6 +11,10 @@
         "message": "Create custom ebooks from your favorite blogs and websites.",
         "description": "Publish custom eBooks with your favorite web content!"
     },
+    "textMobile": {
+        "message": "Use on mobile",
+        "description": "Use on mobile"
+    },
     "textTitle": {
         "message": "Title:",
         "description": "Title of the book."

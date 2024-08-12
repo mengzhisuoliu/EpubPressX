@@ -11,6 +11,10 @@
         "message": "将网页制作成 epub 电子书，支持微信读书等",
         "description": "Publish custom eBooks with your favorite web content!"
     },
+    "textMobile": {
+        "message": "在手机使用",
+        "description": "Use on mobile"
+    },
     "textTitle": {
         "message": "标题：",
         "description": "Title of the book."

@@ -7,6 +7,7 @@ import { generateEpub } from './generater';
 /*
 i18n
 */
+$('#text-mobile').text(chrome.i18n.getMessage('textMobile'));
 $('#text-title').text(chrome.i18n.getMessage('textTitle'));
 $('#auto-gen-title title').text(chrome.i18n.getMessage('textAutoGenTitle'));
 // text-cover
