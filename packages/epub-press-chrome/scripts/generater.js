@@ -82,6 +82,19 @@ ${book.pages.map((page, index) => `        <navPoint id="chapter${index + 1}" pl
         <style>
             body {
                 font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+                word-break: break-word;
+                hyphens: auto;
+                text-align: justify;
+                line-height: 1.75em;
+                letter-spacing: 0.5px;
+            }
+            p, section {
+                display: block;
+                margin-block-start: 1em;
+                margin-block-end: 1em;
+                margin-inline-start: 0px;
+                margin-inline-end: 0px;
+                unicode-bidi: isolate;
             }
         </style>
     </head>
