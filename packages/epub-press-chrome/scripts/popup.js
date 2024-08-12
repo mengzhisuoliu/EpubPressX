@@ -46,6 +46,27 @@ async function autoGenTitle() {
     }
 }
 
+/**
+ * replace all Mac & Windows not supported characters to '_'
+ * limit max length
+ */
+function sanitizeFilename(filename) {
+    return filename
+        .trim()
+        .replace(/[/\\?%*:|"<>]/g, '_') // Replace not supported characters
+        .replace(/\.\./g, '_') // Replace double dots to avoid navigation confusion
+        .replace(/\.+$/, '') // Remove trailing periods
+        .substring(0, 100);
+}
+
+function useFirstCheckedTitle() {
+    const firstChecked = $('input.article-checkbox:checked')[0];
+    if (firstChecked) {
+        const title = firstChecked.nextElementSibling.textContent;
+        $('#book-title').val(sanitizeFilename(title));
+    }
+}
+
 $('#gen-icon').on('click', () => {
     autoGenTitle();
 });
@@ -56,6 +77,9 @@ function updateSelectedCount() {
         $('#text-title-container').addClass('selected');
     } else {
         $('#text-title-container').removeClass('selected');
+    }
+    if (selectedCount === 1) {
+        useFirstCheckedTitle();
     }
 }
 
@@ -95,7 +119,7 @@ $('#download').click(() => {
         Browser.getTabsHtml(selectedItems).then((sections) => {
             UI.showSection('#downloadSpinner');
             const book = {
-                title: $('#book-title').val() || $('#book-title').attr('placeholder'),
+                title: sanitizeFilename($('#book-title').val()) || $('#book-title').attr('placeholder'),
                 coverPath: $('#book-cover').val() || undefined,
                 includeImages: $('#include-images').prop('checked'),
                 sections,

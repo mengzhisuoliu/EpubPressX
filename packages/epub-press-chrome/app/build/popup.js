@@ -31096,6 +31096,24 @@ async function autoGenTitle() {
     }
   }
 }
+
+/**
+ * replace all Mac & Windows not supported characters to '_'
+ * limit max length
+ */
+function sanitizeFilename(filename) {
+  return filename.trim().replace(/[/\\?%*:|"<>]/g, '_') // Replace not supported characters
+  .replace(/\.\./g, '_') // Replace double dots to avoid navigation confusion
+  .replace(/\.+$/, '') // Remove trailing periods
+  .substring(0, 100);
+}
+function useFirstCheckedTitle() {
+  const firstChecked = jquery_default()('input.article-checkbox:checked')[0];
+  if (firstChecked) {
+    const title = firstChecked.nextElementSibling.textContent;
+    jquery_default()('#book-title').val(sanitizeFilename(title));
+  }
+}
 jquery_default()('#gen-icon').on('click', () => {
   autoGenTitle();
 });
@@ -31105,6 +31123,9 @@ function updateSelectedCount() {
     jquery_default()('#text-title-container').addClass('selected');
   } else {
     jquery_default()('#text-title-container').removeClass('selected');
+  }
+  if (selectedCount === 1) {
+    useFirstCheckedTitle();
   }
 }
 jquery_default()('#tab-list').on('change', 'input.article-checkbox', () => {
@@ -31138,7 +31159,7 @@ jquery_default()('#download').click(() => {
     browser.getTabsHtml(selectedItems).then(sections => {
       ui.showSection('#downloadSpinner');
       const book = {
-        title: jquery_default()('#book-title').val() || jquery_default()('#book-title').attr('placeholder'),
+        title: sanitizeFilename(jquery_default()('#book-title').val()) || jquery_default()('#book-title').attr('placeholder'),
         coverPath: jquery_default()('#book-cover').val() || undefined,
         includeImages: jquery_default()('#include-images').prop('checked'),
         sections
