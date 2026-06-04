@@ -1,3 +1,5 @@
 node_modules
 ignored
 *.log
+**/.DS_Store
+packages/epub-press-chrome/releases/*

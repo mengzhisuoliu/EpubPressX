@@ -5,6 +5,7 @@ class UI {
     static initializeUi() {
         const date = dayjs().format('YYYY-M-D');
         document.getElementById('book-title').placeholder = `EpubPressX ${date}`;
+        UI.initializeOverflowMask();
     }
 
     static setErrorMessage(msg) {
@@ -19,6 +20,7 @@ class UI {
                 $(selector).hide();
             }
         });
+        UI.scheduleOverflowMaskSync();
     }
 
     static setAlertMessage(message) {
@@ -70,8 +72,71 @@ class UI {
                     id: tab.id,
                 }));
             });
+            UI.scheduleOverflowMaskSync();
         }).catch((error) => {
             UI.setErrorMessage(`Searching tabs failed: ${error}`);
+        });
+    }
+
+    static initializeOverflowMask() {
+        if (UI.overflowMaskInitialized) {
+            UI.scheduleOverflowMaskSync();
+            return;
+        }
+
+        UI.overflowMaskInitialized = true;
+
+        const syncMask = () => UI.syncOverflowMask();
+        window.addEventListener('resize', syncMask);
+        window.addEventListener('scroll', syncMask, { passive: true });
+        document.getElementById('scroll-to-bottom').addEventListener('click', () => {
+            UI.scrollToBottom();
+        });
+
+        if (typeof MutationObserver !== 'undefined') {
+            UI.overflowMaskObserver = new MutationObserver(() => {
+                UI.scheduleOverflowMaskSync();
+            });
+            UI.overflowMaskObserver.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                characterData: true,
+            });
+        }
+
+        UI.scheduleOverflowMaskSync();
+    }
+
+    static scheduleOverflowMaskSync() {
+        if (UI.overflowMaskFrame) {
+            cancelAnimationFrame(UI.overflowMaskFrame);
+        }
+
+        UI.overflowMaskFrame = requestAnimationFrame(() => {
+            UI.overflowMaskFrame = null;
+            UI.syncOverflowMask();
+        });
+    }
+
+    static syncOverflowMask() {
+        const root = document.documentElement;
+        const viewportHeight = window.innerHeight;
+        const scrollTop = window.scrollY || root.scrollTop || 0;
+        const maxScrollTop = Math.max(root.scrollHeight - viewportHeight, 0);
+        const isOverflowing = root.scrollHeight > viewportHeight + 1;
+        const isAtBottom = scrollTop >= maxScrollTop - 1;
+
+        document.body.classList.toggle('has-bottom-mask', isOverflowing && !isAtBottom);
+    }
+
+    static scrollToBottom() {
+        const root = document.documentElement;
+        const maxScrollTop = Math.max(root.scrollHeight - window.innerHeight, 0);
+
+        window.scrollTo({
+            top: maxScrollTop,
+            behavior: 'smooth',
         });
     }
 }
@@ -83,5 +148,9 @@ UI.SECTIONS_SELECTORS = [
     '#downloadSuccess',
     '#downloadFailed',
 ];
+
+UI.overflowMaskInitialized = false;
+UI.overflowMaskObserver = null;
+UI.overflowMaskFrame = null;
 
 export default UI;

@@ -8,6 +8,61 @@ body {
     padding: 0px;
     margin: 0px;
     width: 500px;
+    position: relative;
+}
+
+body.has-bottom-mask::after {
+    content: '';
+    position: fixed;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    height: 36px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(42, 42, 42, 0.22));
+    pointer-events: none;
+    z-index: 999;
+}
+
+#scroll-to-bottom {
+    display: none;
+    position: fixed;
+    left: 50%;
+    bottom: 8px;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 28px;
+    border: 0px;
+    padding: 0px;
+    background: transparent;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+#scroll-to-bottom:focus {
+    outline: none;
+}
+
+#scroll-to-bottom .scroll-chevron {
+    display: block;
+    width: 11px;
+    height: 11px;
+    margin: 0px auto;
+    border-right: 2px solid rgba(42, 42, 42, 0.7);
+    border-bottom: 2px solid rgba(42, 42, 42, 0.7);
+    transform: rotate(45deg);
+}
+
+#scroll-to-bottom .scroll-chevron + .scroll-chevron {
+    margin-top: -3px;
+}
+
+#scroll-to-bottom:hover .scroll-chevron,
+#scroll-to-bottom:focus-visible .scroll-chevron {
+    border-color: rgba(42, 42, 42, 0.95);
+}
+
+body.has-bottom-mask #scroll-to-bottom {
+    display: block;
 }
 
 h1, h2, h3, h4 {

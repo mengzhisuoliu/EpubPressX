@@ -28,7 +28,7 @@ const template = {
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId">
     <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
         <dc:title>${book.title}</dc:title>
-        <dc:language>en</dc:language>
+        <dc:language>${book.language}</dc:language>
         <dc:identifier id="BookId" opf:scheme="uuid">${book.id}</dc:identifier>
         <dc:creator opf:file-as="" opf:role="aut">EpubPressX</dc:creator>
         <meta name="cover" content="cover"/>
@@ -48,7 +48,7 @@ ${book.pages.map((page, index) => `        <itemref idref="chapter${index + 1}" 
 
     ['OEBPS/toc.ncx']: function (book) {
         return `<?xml version="1.0" encoding="UTF-8"?>
-<ncx version="2005-1" xml:lang="en" xmlns="http://www.daisy.org/z3986/2005/ncx/">
+<ncx version="2005-1" xml:lang="${book.language}" xmlns="http://www.daisy.org/z3986/2005/ncx/">
     <head>
         <meta name="dtb:uid" content="${book.id}"/> <!-- same as in .opf -->
         <meta name="dtb:depth" content="1"/> <!-- 1 or higher -->
@@ -74,9 +74,10 @@ ${book.pages.map((page, index) => `        <navPoint id="chapter${index + 1}" pl
 </ncx>`
     },
 
-    chapter: function (title, content) {
+    chapter: function (title, content, language) {
+        const languageAttributes = language ? ` lang="${language}" xml:lang="${language}"` : '';
         return `<?xml version="1.0" encoding="UTF-8" ?>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml"${languageAttributes}>
     <head>
         <title>${title}</title>
         <style>
@@ -135,6 +136,74 @@ function htmlEncode(input = '') {
       .replace(/'/g, '&#39;');
 }
 
+function normalizeLanguageTag(language = '') {
+    const normalized = language.trim().replace(/_/g, '-');
+    if (!normalized) {
+        return '';
+    }
+
+    const parts = normalized.split('-').filter(Boolean);
+    if (parts.length === 0) {
+        return '';
+    }
+
+    return parts
+        .map((part, index) => {
+            if (index === 0) {
+                return part.toLowerCase();
+            }
+            if (part.length === 2) {
+                return part.toUpperCase();
+            }
+            return part.toLowerCase();
+        })
+        .join('-');
+}
+
+function extractLanguageFromHtml(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const htmlLang = doc.documentElement?.getAttribute('lang') || '';
+    if (htmlLang) {
+        return normalizeLanguageTag(htmlLang);
+    }
+
+    const selectors = [
+        'meta[http-equiv="content-language"]',
+        'meta[name="content-language"]',
+        'meta[name="language"]',
+        'meta[property="language"]',
+        'meta[name="dc.language"]',
+        'meta[property="dc.language"]',
+        'meta[name="dcterms.language"]',
+        'meta[property="og:locale"]',
+    ];
+
+    for (const selector of selectors) {
+        const content = doc.querySelector(selector)?.getAttribute('content') || '';
+        const language = normalizeLanguageTag(content.split(',')[0].trim());
+        if (language) {
+            return language;
+        }
+    }
+
+    const scripts = Array.from(doc.querySelectorAll('script'));
+    for (const script of scripts) {
+        const content = script.textContent || '';
+        const match = content.match(/window\.LANG\s*=\s*['"]([^'"]+)['"]/);
+        const language = normalizeLanguageTag(match?.[1] || '');
+        if (language) {
+            return language;
+        }
+    }
+
+    const elementLang = doc.querySelector('body[lang], article[lang], main[lang], [lang]')?.getAttribute('lang') || '';
+    if (elementLang) {
+        return normalizeLanguageTag(elementLang);
+    }
+
+    return '';
+}
+
 // replace images in html with local path
 function replaceImages(html, images) {
     const srcPathMap = {};
@@ -161,20 +230,46 @@ function replaceImages(html, images) {
 }
 
 function downloadImages(images) {
-    const promises = [];
-    for (const image of images) {
-        promises.push(new Promise((resolve, reject) => {
-            fetch(image.src).then(res => {
-                image.type = res.headers.get('Content-Type');
-                res.blob().then(blob => {
-                    image.blob = blob;
-                    resolve()
-                })
-            }).catch(error => {
-                reject(error)
-            })
-        }))
-    }
+    const extensionTypeMap = {
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        png: 'image/png',
+        gif: 'image/gif',
+        webp: 'image/webp',
+        svg: 'image/svg+xml',
+        bmp: 'image/bmp',
+        avif: 'image/avif',
+    };
+
+    const getTypeFromUrl = (src = '') => {
+        const cleanUrl = src.split('?')[0].split('#')[0];
+        const extension = cleanUrl.split('.').pop()?.toLowerCase() || '';
+        return extensionTypeMap[extension] || '';
+    };
+
+    const promises = images.map(async (image) => {
+        try {
+            const res = await fetch(image.src);
+            if (!res.ok) {
+                throw new Error(`Image download failed with status ${res.status}`);
+            }
+
+            const blob = await res.blob();
+            const contentType = (res.headers.get('Content-Type') || blob.type || getTypeFromUrl(image.src) || '').split(';')[0].trim();
+
+            if (!contentType) {
+                throw new Error('Missing image content type');
+            }
+
+            image.type = contentType;
+            image.blob = blob;
+        } catch (error) {
+            console.error(`Skipping image download: ${image.src}`, error);
+            image.type = null;
+            image.blob = null;
+        }
+    });
+
     return Promise.all(promises)
 }
 
@@ -182,12 +277,18 @@ export async function generateEpub(book) {
     initSanitize(book.includeImages)
     book.id = `book-${Date.now()}`
     book.pages = []
+    const sectionLanguages = [];
     for(const section of book.sections) {
         const page = await extractFromHtml(section.html, section.url)
         if (page) {
+            page.language = extractLanguageFromHtml(section.html);
+            if (page.language) {
+                sectionLanguages.push(page.language);
+            }
             book.pages.push(page)
         }
     }
+    book.language = sectionLanguages[0] || 'en';
 
     // [{ id, src, type, blob, path }]
     const images = [];
@@ -214,13 +315,10 @@ export async function generateEpub(book) {
             src: coverPath,
         });
     }
-    try {
-        await downloadImages(images);
-    } catch (error) {
-        console.error(error)
-    }
+    await downloadImages(images);
+    const validImages = images.filter(image => image.blob && image.type);
     // set images path
-    images.forEach(image => {
+    validImages.forEach(image => {
         image.path = 'image/' + image.id + '.' + image.type.split('/')[1];
     });
 
@@ -229,14 +327,14 @@ export async function generateEpub(book) {
     zip.file('META-INF/container.xml', template['META-INF/container.xml']());
     zip.file('OEBPS/toc.ncx', template['OEBPS/toc.ncx'](book));
     book.pages.forEach((page, index) => {
-        let xml = template.chapter(page.title, page.content)
-        xml = replaceImages(xml, images);
+        let xml = template.chapter(page.title, page.content, page.language)
+        xml = replaceImages(xml, validImages);
         zip.file(`OEBPS/chapter${index + 1}.xhtml`, xml);
     })
     zip.file('OEBPS/references.xhtml', template.references(book));
-    for (const image of images) {
+    for (const image of validImages) {
         zip.file('OEBPS/' + image.path, image.blob);
     }
-    zip.file('OEBPS/content.opf', template['OEBPS/content.opf'](book, images));
+    zip.file('OEBPS/content.opf', template['OEBPS/content.opf'](book, validImages));
     return zip.generateAsync({ type: 'blob', mimeType: 'application/epub+zip' })
 }
