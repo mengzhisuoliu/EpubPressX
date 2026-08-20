@@ -52,20 +52,50 @@ class Browser {
         return promise;
     }
 
+    static isHostPermissionError(error) {
+        const message = (error && error.message) ? error.message : String(error || '');
+        return /Cannot access contents of the page|must request permission to access/i.test(message);
+    }
+
+    static getOriginPatterns(tabs) {
+        const origins = new Set();
+        (tabs || []).forEach((tab) => {
+            try {
+                const { origin } = new URL(tab.url);
+                if (origin && origin !== 'null') {
+                    origins.add(`${origin}/*`);
+                }
+            } catch (error) {
+                // Ignore invalid URLs.
+            }
+        });
+        return [...origins];
+    }
+
+    static ensureHostPermissions(tabs) {
+        const origins = Browser.getOriginPatterns(tabs);
+        if (!origins.length || !chrome.permissions || !chrome.permissions.request) {
+            return Promise.resolve(true);
+        }
+
+        // Call request() directly so it stays in the user-gesture window.
+        // If access is already granted, Chrome resolves true without a prompt.
+        return chrome.permissions.request({ origins }).catch(() => false);
+    }
+
     static getTabsHtml(tabs) {
-        const htmlPromises = tabs.map(
-            tab => new Promise((resolve) => {
-                chrome.scripting.executeScript({
-                    target: { tabId: tab.id },
-                    func: () => document.documentElement.outerHTML,
-                }).then((list) => {
-                    resolve({
-                        ...tab,
-                        html: list[0].result,
-                    });
-                });
-            }),
-        );
+        const htmlPromises = tabs.map(tab => chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => document.documentElement.outerHTML,
+        }).then((list) => ({
+            ...tab,
+            html: list[0].result,
+        })).catch((error) => {
+            const err = new Error((error && error.message) ? error.message : String(error));
+            err.tab = tab;
+            err.isHostPermissionError = Browser.isHostPermissionError(error);
+            throw err;
+        }));
 
         return Promise.all(htmlPromises);
     }

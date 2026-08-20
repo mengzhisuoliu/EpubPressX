@@ -116,7 +116,17 @@ $('#download').click(() => {
     if (selectedItems.length <= 0) {
         $('#alert-message').text(chrome.i18n.getMessage('textNoItems'));
     } else {
-        Browser.getTabsHtml(selectedItems).then((sections) => {
+        $('#alert-message').text('');
+        Browser.ensureHostPermissions(selectedItems).then((granted) => {
+            if (!granted) {
+                UI.setAlertMessage(chrome.i18n.getMessage('textNeedSiteAccess'));
+                return null;
+            }
+            return Browser.getTabsHtml(selectedItems);
+        }).then((sections) => {
+            if (!sections) {
+                return;
+            }
             UI.showSection('#downloadSpinner');
             const book = {
                 title: sanitizeFilename($('#book-title').val()) || $('#book-title').attr('placeholder'),
@@ -132,7 +142,10 @@ $('#download').click(() => {
                 UI.showSection('#downloadSuccess');
             });
         }).catch((error) => {
-            UI.setErrorMessage(`Could not find tab content: ${error}`);
+            const message = error && error.isHostPermissionError
+                ? chrome.i18n.getMessage('textNeedSiteAccess')
+                : (chrome.i18n.getMessage('textTabContentError') || `Could not find tab content: ${error}`);
+            UI.setAlertMessage(message);
         });
     }
 });

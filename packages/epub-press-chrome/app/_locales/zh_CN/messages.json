@@ -49,5 +49,13 @@
     "textNoItems": {
         "message": "没有选中的页面！",
         "description": "No items selected."
+    },
+    "textNeedSiteAccess": {
+        "message": "无法读取这些页面。请到 chrome://extensions → EpubPressX → 网站访问，选择「在所有网站上」后再试。",
+        "description": "Shown when Chrome withholds host permission for selected tabs."
+    },
+    "textTabContentError": {
+        "message": "无法读取所选页面，可能是浏览器限制页面。",
+        "description": "Shown when a tab's HTML cannot be read."
     }
 }

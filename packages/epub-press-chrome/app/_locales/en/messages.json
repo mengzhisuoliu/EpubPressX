@@ -49,5 +49,13 @@
     "textNoItems": {
         "message": "No articles selected!",
         "description": "No items selected."
+    },
+    "textNeedSiteAccess": {
+        "message": "Can't read these pages. Open chrome://extensions → EpubPressX → Site access, choose \"On all sites\", then try again.",
+        "description": "Shown when Chrome withholds host permission for selected tabs."
+    },
+    "textTabContentError": {
+        "message": "Could not read the selected page. It may be a restricted Chrome page.",
+        "description": "Shown when a tab's HTML cannot be read."
     }
 }

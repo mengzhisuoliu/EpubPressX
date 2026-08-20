@@ -33993,19 +33993,52 @@ class Browser {
     }
     return promise;
   }
+  static isHostPermissionError(error) {
+    const message = error && error.message ? error.message : String(error || '');
+    return /Cannot access contents of the page|must request permission to access/i.test(message);
+  }
+  static getOriginPatterns(tabs) {
+    const origins = new Set();
+    (tabs || []).forEach(tab => {
+      try {
+        const {
+          origin
+        } = new URL(tab.url);
+        if (origin && origin !== 'null') {
+          origins.add(`${origin}/*`);
+        }
+      } catch (error) {
+        // Ignore invalid URLs.
+      }
+    });
+    return [...origins];
+  }
+  static ensureHostPermissions(tabs) {
+    const origins = Browser.getOriginPatterns(tabs);
+    if (!origins.length || !chrome.permissions || !chrome.permissions.request) {
+      return bluebird_default().resolve(true);
+    }
+
+    // Call request() directly so it stays in the user-gesture window.
+    // If access is already granted, Chrome resolves true without a prompt.
+    return chrome.permissions.request({
+      origins
+    }).catch(() => false);
+  }
   static getTabsHtml(tabs) {
-    const htmlPromises = tabs.map(tab => new (bluebird_default())(resolve => {
-      chrome.scripting.executeScript({
-        target: {
-          tabId: tab.id
-        },
-        func: () => document.documentElement.outerHTML
-      }).then(list => {
-        resolve({
-          ...tab,
-          html: list[0].result
-        });
-      });
+    const htmlPromises = tabs.map(tab => chrome.scripting.executeScript({
+      target: {
+        tabId: tab.id
+      },
+      func: () => document.documentElement.outerHTML
+    }).then(list => ({
+      ...tab,
+      html: list[0].result
+    })).catch(error => {
+      const err = new Error(error && error.message ? error.message : String(error));
+      err.tab = tab;
+      err.isHostPermissionError = Browser.isHostPermissionError(error);
+      throw err;
     }));
     return bluebird_default().all(htmlPromises);
   }
@@ -49428,7 +49461,17 @@ jquery_default()('#download').click(() => {
   if (selectedItems.length <= 0) {
     jquery_default()('#alert-message').text(chrome.i18n.getMessage('textNoItems'));
   } else {
-    browser.getTabsHtml(selectedItems).then(sections => {
+    jquery_default()('#alert-message').text('');
+    browser.ensureHostPermissions(selectedItems).then(granted => {
+      if (!granted) {
+        ui.setAlertMessage(chrome.i18n.getMessage('textNeedSiteAccess'));
+        return null;
+      }
+      return browser.getTabsHtml(selectedItems);
+    }).then(sections => {
+      if (!sections) {
+        return;
+      }
       ui.showSection('#downloadSpinner');
       const book = {
         title: sanitizeFilename(jquery_default()('#book-title').val()) || jquery_default()('#book-title').attr('placeholder'),
@@ -49444,7 +49487,8 @@ jquery_default()('#download').click(() => {
         ui.showSection('#downloadSuccess');
       });
     }).catch(error => {
-      ui.setErrorMessage(`Could not find tab content: ${error}`);
+      const message = error && error.isHostPermissionError ? chrome.i18n.getMessage('textNeedSiteAccess') : chrome.i18n.getMessage('textTabContentError') || `Could not find tab content: ${error}`;
+      ui.setAlertMessage(message);
     });
   }
 });
