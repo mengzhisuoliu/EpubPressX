@@ -12,8 +12,8 @@
         "description": "Publish custom eBooks with your favorite web content!"
     },
     "textMobile": {
-        "message": "在手机使用",
-        "description": "Use on mobile"
+        "message": "试试 App",
+        "description": "Try the mobile app"
     },
     "textTitle": {
         "message": "标题：",

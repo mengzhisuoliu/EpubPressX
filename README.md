@@ -5,7 +5,7 @@
 
 可以通过 [chrome 商店](https://chrome.google.com/webstore/detail/epubpressx-read-the-web-o/akgkfegkiajbamekmkcafnfckmhgcnpa) 进行安装。
 
-配合 [沉浸式翻译](https://chrome.google.com/webstore/detail/immersive-translate/bpoadfkcbjbfhfodiogcnhhhpibjhbnh)  插件可以制作双语电子书。
+如果要在手机上制作电子书，可以试试 [Magipaper](https://magipaper.com)。
 
 ## 效果预览
 ![效果预览](screenshots/4.png)

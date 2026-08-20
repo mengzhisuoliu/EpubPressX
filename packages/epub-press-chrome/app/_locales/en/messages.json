@@ -12,8 +12,8 @@
         "description": "Publish custom eBooks with your favorite web content!"
     },
     "textMobile": {
-        "message": "Use on mobile",
-        "description": "Use on mobile"
+        "message": "Try the app",
+        "description": "Try the mobile app"
     },
     "textTitle": {
         "message": "Title:",

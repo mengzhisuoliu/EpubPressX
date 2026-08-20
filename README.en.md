@@ -3,6 +3,8 @@ A Chrome extension that can convert web pages into epub e-books, compatible with
 
 You can install it from the [Chrome Store](https://chrome.google.com/webstore/detail/epubpressx-read-the-web-o/akgkfegkiajbamekmkcafnfckmhgcnpa).
 
+If you want to make ebooks on your phone, you can try [Magipaper](https://magipaper.com).
+
 ## Preview
 ![Preview](screenshots/1.png)
 ![Preview](screenshots/3.png)
